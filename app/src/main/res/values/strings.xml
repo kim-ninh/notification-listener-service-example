@@ -12,5 +12,8 @@
     <string name="notification_listener_service_explanation">"For the the app. to work you need to enable the Notification Listener Service. Enable it now?"</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="package_name_template">Package: %s</string>
+    <string name="noti_action">Notification %s</string>
+    <string name="noti_title_template">Title: \"%s\"</string>
 
 </resources>

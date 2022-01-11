@@ -1,17 +1,16 @@
 package com.github.chagall.notificationlistenerexample
 
 import android.app.AlertDialog
-import android.content.*
-import androidx.appcompat.app.AppCompatActivity
-import com.github.chagall.notificationlistenerexample.MainActivity.ImageChangeBroadcastReceiver
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import com.github.chagall.notificationlistenerexample.R
-import com.github.chagall.notificationlistenerexample.NotificationListenerExampleService
-import com.github.chagall.notificationlistenerexample.MainActivity
 import android.text.TextUtils
-import android.view.View
-import android.widget.ImageView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
+import com.github.chagall.notificationlistenerexample.databinding.ActivityMainBinding
 
 /**
  * MIT License
@@ -33,54 +32,30 @@ import android.widget.ImageView
  * SOFTWARE.
  */
 class MainActivity : AppCompatActivity() {
-    private var interceptedNotificationImageView: ImageView? = null
-    private var imageChangeBroadcastReceiver: ImageChangeBroadcastReceiver? = null
-    private var enableNotificationListenerAlertDialog: AlertDialog? = null
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        // Here we get a reference to the image we will modify when a notification is received
-        interceptedNotificationImageView =
-            findViewById<View>(R.id.intercepted_notification_logo) as ImageView
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // If the user did not turn the notification listener service on we prompt him to do so
         if (!isNotificationServiceEnabled) {
-            enableNotificationListenerAlertDialog = buildNotificationServiceAlertDialog()
-            enableNotificationListenerAlertDialog!!.show()
+            val enableNotificationListenerAlertDialog = buildNotificationServiceAlertDialog()
+            enableNotificationListenerAlertDialog.show()
         }
 
-        // Finally we register a receiver to tell the MainActivity when a notification has been received
-        imageChangeBroadcastReceiver = ImageChangeBroadcastReceiver()
-        val intentFilter = IntentFilter()
-        intentFilter.addAction("com.github.chagall.notificationlistenerexample")
-        registerReceiver(imageChangeBroadcastReceiver, intentFilter)
-    }
+        NotificationListenerExampleService.notiAction.observe(this) { notiAction ->
+            binding.notiActionTextView.text = getString(R.string.noti_action, notiAction)
+        }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver(imageChangeBroadcastReceiver)
-    }
-
-    /**
-     * Change Intercepted Notification Image
-     * Changes the MainActivity image based on which notification was intercepted
-     * @param notificationCode The intercepted notification code
-     */
-    private fun changeInterceptedNotificationImage(notificationCode: Int) {
-        when (notificationCode) {
-            NotificationListenerExampleService.InterceptedNotificationCode.FACEBOOK_CODE -> interceptedNotificationImageView!!.setImageResource(
-                R.drawable.facebook_logo
-            )
-            NotificationListenerExampleService.InterceptedNotificationCode.INSTAGRAM_CODE -> interceptedNotificationImageView!!.setImageResource(
-                R.drawable.instagram_logo
-            )
-            NotificationListenerExampleService.InterceptedNotificationCode.WHATSAPP_CODE -> interceptedNotificationImageView!!.setImageResource(
-                R.drawable.whatsapp_logo
-            )
-            NotificationListenerExampleService.InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE -> interceptedNotificationImageView!!.setImageResource(
-                R.drawable.other_notification_logo
-            )
+        NotificationListenerExampleService.statusBarNoti.observe(this) { statusBarNotification ->
+            val notification = statusBarNotification.notification
+            val contentTitle = NotificationCompat.getContentTitle(notification)
+            binding.notiPackageNameTextView.text =
+                getString(R.string.package_name_template, statusBarNotification.packageName)
+            binding.notiContentTitleTextView.text =
+                getString(R.string.noti_title_template, contentTitle)
         }
     }
 
@@ -119,8 +94,8 @@ class MainActivity : AppCompatActivity() {
      */
     inner class ImageChangeBroadcastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val receivedNotificationCode = intent.getIntExtra("Notification Code", -1)
-            changeInterceptedNotificationImage(receivedNotificationCode)
+//            val receivedNotificationCode = intent.getIntExtra("Notification Code", -1)
+//            changeInterceptedNotificationImage(receivedNotificationCode)
         }
     }
 
