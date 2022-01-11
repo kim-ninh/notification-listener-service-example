@@ -1,14 +1,16 @@
-package com.github.chagall.notificationlistenerexample;
+package com.github.chagall.notificationlistenerexample
 
-import android.content.Intent;
-import android.os.IBinder;
-import android.service.notification.NotificationListenerService;
-import android.service.notification.StatusBarNotification;
+import android.service.notification.NotificationListenerService
+import android.content.Intent
+import android.os.IBinder
+import android.service.notification.StatusBarNotification
+import com.github.chagall.notificationlistenerexample.NotificationListenerExampleService.InterceptedNotificationCode
+import com.github.chagall.notificationlistenerexample.NotificationListenerExampleService.ApplicationPackageNames
 
 /**
  * MIT License
  *
- *  Copyright (c) 2016 Fábio Alves Martins Pereira (Chagall)
+ * Copyright (c) 2016 Fábio Alves Martins Pereira (Chagall)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,82 +26,69 @@ import android.service.notification.StatusBarNotification;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-public class NotificationListenerExampleService extends NotificationListenerService {
-
+class NotificationListenerExampleService : NotificationListenerService() {
     /*
         These are the package names of the apps. for which we want to
         listen the notifications
      */
-    private static final class ApplicationPackageNames {
-        public static final String FACEBOOK_PACK_NAME = "com.facebook.katana";
-        public static final String FACEBOOK_MESSENGER_PACK_NAME = "com.facebook.orca";
-        public static final String WHATSAPP_PACK_NAME = "com.whatsapp";
-        public static final String INSTAGRAM_PACK_NAME = "com.instagram.android";
+    private object ApplicationPackageNames {
+        const val FACEBOOK_PACK_NAME = "com.facebook.katana"
+        const val FACEBOOK_MESSENGER_PACK_NAME = "com.facebook.orca"
+        const val WHATSAPP_PACK_NAME = "com.whatsapp"
+        const val INSTAGRAM_PACK_NAME = "com.instagram.android"
     }
 
     /*
         These are the return codes we use in the method which intercepts
         the notifications, to decide whether we should do something or not
      */
-    public static final class InterceptedNotificationCode {
-        public static final int FACEBOOK_CODE = 1;
-        public static final int WHATSAPP_CODE = 2;
-        public static final int INSTAGRAM_CODE = 3;
-        public static final int OTHER_NOTIFICATIONS_CODE = 4; // We ignore all notification with code == 4
+    object InterceptedNotificationCode {
+        const val FACEBOOK_CODE = 1
+        const val WHATSAPP_CODE = 2
+        const val INSTAGRAM_CODE = 3
+        const val OTHER_NOTIFICATIONS_CODE = 4 // We ignore all notification with code == 4
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return super.onBind(intent);
+    override fun onBind(intent: Intent): IBinder? {
+        return super.onBind(intent)
     }
 
-    @Override
-    public void onNotificationPosted(StatusBarNotification sbn){
-        int notificationCode = matchNotificationCode(sbn);
-
-        if(notificationCode != InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE){
-            Intent intent = new  Intent("com.github.chagall.notificationlistenerexample");
-            intent.putExtra("Notification Code", notificationCode);
-            sendBroadcast(intent);
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        val notificationCode = matchNotificationCode(sbn)
+        if (notificationCode != InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE) {
+            val intent = Intent("com.github.chagall.notificationlistenerexample")
+            intent.putExtra("Notification Code", notificationCode)
+            sendBroadcast(intent)
         }
     }
 
-    @Override
-    public void onNotificationRemoved(StatusBarNotification sbn){
-        int notificationCode = matchNotificationCode(sbn);
-
-        if(notificationCode != InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE) {
-
-            StatusBarNotification[] activeNotifications = this.getActiveNotifications();
-
-            if(activeNotifications != null && activeNotifications.length > 0) {
-                for (int i = 0; i < activeNotifications.length; i++) {
+    override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        val notificationCode = matchNotificationCode(sbn)
+        if (notificationCode != InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE) {
+            val activeNotifications = this.activeNotifications
+            if (activeNotifications != null && activeNotifications.size > 0) {
+                for (i in activeNotifications.indices) {
                     if (notificationCode == matchNotificationCode(activeNotifications[i])) {
-                        Intent intent = new  Intent("com.github.chagall.notificationlistenerexample");
-                        intent.putExtra("Notification Code", notificationCode);
-                        sendBroadcast(intent);
-                        break;
+                        val intent = Intent("com.github.chagall.notificationlistenerexample")
+                        intent.putExtra("Notification Code", notificationCode)
+                        sendBroadcast(intent)
+                        break
                     }
                 }
             }
         }
     }
 
-    private int matchNotificationCode(StatusBarNotification sbn) {
-        String packageName = sbn.getPackageName();
-
-        if(packageName.equals(ApplicationPackageNames.FACEBOOK_PACK_NAME)
-                || packageName.equals(ApplicationPackageNames.FACEBOOK_MESSENGER_PACK_NAME)){
-            return(InterceptedNotificationCode.FACEBOOK_CODE);
-        }
-        else if(packageName.equals(ApplicationPackageNames.INSTAGRAM_PACK_NAME)){
-            return(InterceptedNotificationCode.INSTAGRAM_CODE);
-        }
-        else if(packageName.equals(ApplicationPackageNames.WHATSAPP_PACK_NAME)){
-            return(InterceptedNotificationCode.WHATSAPP_CODE);
-        }
-        else{
-            return(InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE);
+    private fun matchNotificationCode(sbn: StatusBarNotification): Int {
+        val packageName = sbn.packageName
+        return if (packageName == ApplicationPackageNames.FACEBOOK_PACK_NAME || packageName == ApplicationPackageNames.FACEBOOK_MESSENGER_PACK_NAME) {
+            InterceptedNotificationCode.FACEBOOK_CODE
+        } else if (packageName == ApplicationPackageNames.INSTAGRAM_PACK_NAME) {
+            InterceptedNotificationCode.INSTAGRAM_CODE
+        } else if (packageName == ApplicationPackageNames.WHATSAPP_PACK_NAME) {
+            InterceptedNotificationCode.WHATSAPP_CODE
+        } else {
+            InterceptedNotificationCode.OTHER_NOTIFICATIONS_CODE
         }
     }
 }
